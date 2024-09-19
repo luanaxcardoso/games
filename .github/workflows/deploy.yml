@@ -1,8 +1,9 @@
-name: deploy games
+name: Deploy Games
 
-on: 
+on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
@@ -10,19 +11,19 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
-      - name: Login no meu Docker Hub
+      - name: Login no Docker Hub
         run: docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
       - name: Buildar a imagem do Docker
         run: docker build -t luanaxcardoso/games-deploy .
       - name: Publicar a imagem da aplicação no Docker Hub
         run: docker push luanaxcardoso/games-deploy:latest
 
-  deploy:  
+  deploy:
     needs: build
-    runs-on: [aws-ec2]
-    steps: 
+    runs-on: [aws-ec2]  # Certifique-se de que o runner tem o label 'aws-ec2'
+    steps:
       - name: Criar network
-        run: docker network create my-net || true
+        run: docker network create my-net || true  
       - name: Pull da imagem do Postgres:16
         run: docker pull postgres:16
       - name: Criar/rodar o container do banco de dados
@@ -30,4 +31,4 @@ jobs:
       - name: Pull da imagem da aplicação do Docker Hub
         run: docker pull luanaxcardoso/games-deploy:latest
       - name: Criar/rodar o container da aplicação
-        run: docker run -d -p 3000:3000 --name app-container --network my-net -e DB_URL="postgresql://postgres:postgres@database-container:5432/gamesdatabase?schema=public" luanaxcardoso/games-deploy:latest sh -c "npm run migration:run && npm run start"
+        run: docker run -d -p 3000:3000 --name app-container --network my-net -e DB_URL="postgresql://postgres:12345678@database-container:5432/gamesdatabase?schema=public" luanaxcardoso/games-deploy:latest sh -c "npm run migration:run && npm run start"
